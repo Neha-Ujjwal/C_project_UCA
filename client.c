@@ -9,37 +9,34 @@ char password[20];
 
 
 int createUser(){
-	MYSQL *con = NULL;
- 	// printf("initializing mysql ...\n");
-  	con = mysql_init(NULL);
+	MYSQL *con = mysql_init(NULL);
   	if(NULL == con){
-    	//	printf("Failed to initialize mysql ...\n");
-    	//	printf("Problem: %s\n", mysql_error(con));
     		return 0;
   	}
-  //	printf("attempting to connect ...\n");
+  
   	if(NULL == mysql_real_connect(
      		con,"localhost","root","12345678","client_server_project", 0, NULL, 0)){
-    	//	printf("Failed to connect mysql ...\n");
-    	//	printf("Problem: %s\n", mysql_error(con));
     		return 0;
   	}
- 	// printf("connected to mysql ...\n");
   	char username[100];
  	 printf("enter username : ");
-  	scanf("%s",username);
-  	printf("\n");
+	fgets(username,sizeof(username),stdin);	 
+	 username[strlen(username)-1]='\0';
+//  	scanf("%s",username);
 
   	char pwd[100];
   	printf("enter password : ");
-  	scanf("%s",pwd);
-  	printf("\n");
+  //	scanf("%s",pwd);
+  //	printf("\n");
+  	fgets(pwd,sizeof(pwd),stdin);
+        pwd[strlen(pwd)-1]='\0';
+
 
 
 	char email[100];
         printf("enter emailId : ");
-        scanf("%s",email);
-         printf("\n");
+	fgets(email,sizeof(email),stdin);
+        email[strlen(email)-1]='\0';
 
   	char query[256];
   	snprintf(query,sizeof(query),"INSERT INTO authentication_data(username,password,email_id) VALUES ('%s','%s','%s')",username,pwd,email);
@@ -55,89 +52,44 @@ int createUser(){
  	 return 1;
 }
 int authenticate_user(int sockfd){
-		char newUserAccount[10];
-		int newUserCreation=0;
-
 		int isAuthenticated=0;
-                  //     printf("do you want to create a new user?(yes/no)");
-                    //   scanf("%s",newUserAccount);
-
-                 while(1){
-                       printf("do you want to create a new user?(yes/no)");
-                       scanf("%s",newUserAccount);
-
-                       if(strcmp(newUserAccount,"yes")==0 || strcmp(newUserAccount,"Yes")==0 ||
-                                       strcmp(newUserAccount,"Y")==0 || (strcmp(newUserAccount,"1")==0)){
-                        newUserCreation=1;
-                        break;
-
-                       }else if(strcmp(newUserAccount,"no")==0 || strcmp(newUserAccount,"No")==0 ||
-                                       strcmp(newUserAccount,"N")==0 || strcmp(newUserAccount,"NO")==0 || strcmp(newUserAccount,"0")==0){
-                        newUserCreation=0;
-                        break;
-                       }else if(strcmp(newUserAccount,"\n")==0){
-                               printf("enter a valid input ");
-                       }else{
-			       continue;
-		       }
-
-                 }
-
-		 if(newUserCreation){
-                      int createdUserSuccess=createUser(username,password);
-		      if(createdUserSuccess){
-                             printf("new user created succesfully \n");
-                             isAuthenticated=1;
-                         }else{
-                              printf("error in creating new user \n");
-                              isAuthenticated=0;
-                         }
-
-                 }else{
-                            
-		
-
+    	
         	printf("enter username: ");
-      		  scanf("%s",username);
-      		 //while(strcmp(fgets(username,sizeof(username),stdin),"\n")==0){
-	      	//	 printf("invalid input\n");
-	       	//	printf("enter username: ");
-      		// }
+      		 // scanf("%s",username);
+		  //username[strlen(username)-1]='\0';
+		 bzero(username,sizeof(username));
+      		 while(strcmp(fgets(username,sizeof(username),stdin),"\n")==0){
+	      		 printf("invalid input\n");
+	       		printf("enter username: ");
+			//scanf("%s",username);
+      		 }
 
-       		//username[strlen(username)-1]='\0';
+       		username[strlen(username)-1]='\0';
 		//printf("%s",username);
         	send(sockfd,username,sizeof(username),0);
 
        		 printf("enter password: ");
-        	scanf("%s",password);
+        	//scanf("%s",password);
 	
-	 	//while(strcmp(fgets(password,sizeof(password),stdin),"\n")==0){
-              	//	 printf("invalid input\n");
-               	//	printf("enter password: ");
-      		 //}
+	 	while(strcmp(fgets(password,sizeof(password),stdin),"\n")==0){
+              		 printf("invalid input\n");
+               		printf("enter password: ");
+      		 }
 
-      		 //password[strlen(password)-1]='\0';
+      		 password[strlen(password)-1]='\0';
 
         	//printf("%s",password);
 		send(sockfd,password,sizeof(password),0);
 
         	char res[50];
         	recv(sockfd,res,sizeof(res),0);
-		//printf("res is %d",strcmp(res,"authentication")==0);
 		isAuthenticated=(strcmp(res,"authentication")==0);
-		//printf("%d",isAuthenticated);
-       		 //if(strcmp(res,"authentication")==0){
-		//	isAuthenticated=1;
-
-                // }else{
-                  //       isAuthenticated=0;
-                          //   send(client_sock,"fail",sizeof("fail"),0);
-                  //}
+	
 
 
                 
-        }
-//	printf("value is : %d ",isAuthenticated);
+        
+
 	return isAuthenticated;
 
 }
@@ -148,10 +100,7 @@ int send_File(int client_socket){
         printf("enter the file name you want to send : ");
        // scanf("%s",&fileName);
 
-	//if(send(client_socket,fileName,sizeof(fileName),0)==-1){
-	//	perror("error in sending file name ");
-	//	return 0;
-	//}
+	
 	
 	 while(strcmp(fgets(fileName,sizeof(fileName),stdin),"\n")==0){
                printf("invalid input\n");
@@ -169,12 +118,7 @@ int send_File(int client_socket){
                 return 0;
         }
 
-	//if(send(client_socket,fileName,sizeof(fileName),0)==-1){
-
-	//	perror("error in sending file name ");
-	//	fclose(file);
-          //      return 0;
-        //}
+	
 
 
         char buffer[4096];
@@ -218,7 +162,53 @@ int main(){
                 exit(1);
         }
 	
-	int isAuthenticated=authenticate_user(sockfd);
+
+	//step4 new user creation
+	
+
+		 char newUserAccount[10];
+                int newUserCreation=0;
+
+                int isAuthenticated=0;
+                  //     printf("do you want to create a new user?(yes/no)");
+                    //   scanf("%s",newUserAccount);
+
+                 while(1){
+                       printf("do you want to create a new user?(yes/no)");
+	                //       scanf("%s",newUserAccount);
+			fgets(newUserAccount,sizeof(newUserAccount),stdin);
+			newUserAccount[strlen(newUserAccount)-1]='\0';
+
+                       if(strcmp(newUserAccount,"yes")==0 || strcmp(newUserAccount,"Yes")==0 ||
+                                       strcmp(newUserAccount,"Y")==0 || (strcmp(newUserAccount,"1")==0)){
+                        newUserCreation=1;
+                        break;
+
+                       }else if(strcmp(newUserAccount,"no")==0 || strcmp(newUserAccount,"No")==0 ||
+                                       strcmp(newUserAccount,"N")==0 || strcmp(newUserAccount,"NO")==0 || strcmp(newUserAccount,"0")==0){
+                        newUserCreation=0;
+                        break;
+                       }else if(strcmp(newUserAccount,"\n")==0){
+                               printf("enter a valid input ");
+			}else{
+                               continue;
+                       }
+
+                 }
+
+                 if(newUserCreation){
+                      //int createdUserSuccess=createUse//r(username,password);
+                      if(createUser()){
+                             printf("new user created succesfully \n Please enter your login details\n ");
+                             isAuthenticated=authenticate_user(sockfd);
+                         }else{
+                              printf("error in creating new user \n");
+                              isAuthenticated=0;
+                         }
+
+                 }else{
+			 isAuthenticated=authenticate_user(sockfd);
+		}
 
 	if(isAuthenticated==0){
 		printf("\n authentication fails!! Try again with correct username and password \n \n ");
@@ -234,7 +224,7 @@ int main(){
 	int fileToBeSent=0;
 	char isFile[50];
 	printf("do you want to send file to server?(yes/no)");
-//	scanf("%s",&isFile);
+	//scanf("%s",&isFile);
 	
 	 while(strcmp(fgets(isFile,sizeof(isFile),stdin),"\n")==0){
                printf("invalid input\n");
