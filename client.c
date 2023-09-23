@@ -5,8 +5,47 @@
 #include<arpa/inet.h>
 #include<mysql/mysql.h>
 #include "base64.h"
+#include<regex.h>
 char username[20];
 char password[20];
+
+
+int validateEmail(char* email){
+    regex_t regex;
+    int reti;
+  //  char email[100];
+  
+  //  = "example@example.com"; // Change this to your email address
+
+    // Compile the regular expression
+    reti = regcomp(&regex, "^[a-zA-Z0-9._%+-]+@[a-z]+\\.[a-zA-Z]{2,}$", REG_EXTENDED);
+
+    if (reti) {
+        fprintf(stderr, "Could not compile regex\n");
+        return 0;
+    }
+
+    // Execute the regular expression
+    reti = regexec(&regex, email, 0, NULL, 0);
+
+    if (!reti) {
+        //printf("Valid email address\n");
+	return 1;
+    } else if (reti == REG_NOMATCH) {
+        //printf("Invalid email address\n");
+	return 0;
+    } else {
+        char error_message[100];
+        regerror(reti, &regex, error_message, sizeof(error_message));
+        fprintf(stderr, "Regex match failed: %s\n", error_message);
+        return 0;
+    }
+
+    // Free the compiled regular expression
+    regfree(&regex);
+    return 1;
+    
+}
 
 
 int createUser(){
@@ -23,6 +62,7 @@ int createUser(){
  	 printf("enter username : ");
 	fgets(username,sizeof(username),stdin);	 
 	 username[strlen(username)-1]='\0';
+	
 //  	scanf("%s",username);
 
   	char pwd[100];
@@ -31,7 +71,7 @@ int createUser(){
   //	printf("\n");
   	fgets(pwd,sizeof(pwd),stdin);
 	char *encodedPwd=encode(pwd);
-	printf("%s",encodedPwd);
+	//printf("%s",encodedPwd);
 	for(int i=0;i<strlen(encodedPwd);i++){
 		pwd[i]=encodedPwd[i];
 	}
@@ -44,6 +84,15 @@ int createUser(){
         printf("enter emailId : ");
 	fgets(email,sizeof(email),stdin);
         email[strlen(email)-1]='\0';
+	while(validateEmail(email)==0){
+		printf("Invalid email address. Please enter correct email Id  \n");
+		printf("enter emailId : ");
+	        fgets(email,sizeof(email),stdin);
+       		 email[strlen(email)-1]='\0';
+
+		//printf("enter validate email address!!!!!!!!!");
+	}
+	//validateEmail(email);
 
   	char query[256];
   	snprintf(query,sizeof(query),"INSERT INTO authentication_data(username,password,email_id) VALUES ('%s','%s','%s')",username,pwd,email);
@@ -87,7 +136,7 @@ int authenticate_user(int sockfd){
 
         	//printf("%s",password);
 		send(sockfd,password,sizeof(password),0);
-		printf("%s",password);
+		//printf("%s",password);
         	char res[50];
         	recv(sockfd,res,sizeof(res),0);
 		isAuthenticated=(strcmp(res,"authentication")==0);
