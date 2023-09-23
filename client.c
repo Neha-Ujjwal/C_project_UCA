@@ -4,6 +4,7 @@
 #include<unistd.h>
 #include<arpa/inet.h>
 #include<mysql/mysql.h>
+#include "base64.h"
 char username[20];
 char password[20];
 
@@ -29,7 +30,13 @@ int createUser(){
   //	scanf("%s",pwd);
   //	printf("\n");
   	fgets(pwd,sizeof(pwd),stdin);
-        pwd[strlen(pwd)-1]='\0';
+	char *encodedPwd=encode(pwd);
+	printf("%s",encodedPwd);
+	for(int i=0;i<strlen(encodedPwd);i++){
+		pwd[i]=encodedPwd[i];
+	}
+        //pwd[strlen(pwd)-1]='\0';
+	
 
 
 
@@ -63,7 +70,7 @@ int authenticate_user(int sockfd){
 	       		printf("enter username: ");
 			//scanf("%s",username);
       		 }
-
+		//printf("hello");
        		username[strlen(username)-1]='\0';
 		//printf("%s",username);
         	send(sockfd,username,sizeof(username),0);
@@ -80,7 +87,7 @@ int authenticate_user(int sockfd){
 
         	//printf("%s",password);
 		send(sockfd,password,sizeof(password),0);
-
+		printf("%s",password);
         	char res[50];
         	recv(sockfd,res,sizeof(res),0);
 		isAuthenticated=(strcmp(res,"authentication")==0);
@@ -266,6 +273,7 @@ int main(){
 		bzero(buffer,1024);
 		recv(sockfd,buffer,sizeof(buffer),0);
 		printf("Server : %s\n",buffer);
+	
 	}
 
 	close(sockfd);
